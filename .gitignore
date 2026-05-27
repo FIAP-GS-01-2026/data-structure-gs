@@ -1,0 +1,66 @@
+# =============================================================
+# .gitignore — Mission Control AI (Projeto C / GCC)
+# =============================================================
+
+# ----- Binários compilados -----------------------------------
+mission_control
+mission_control.exe
+*.exe
+*.out
+*.app
+
+# ----- Arquivos objeto e bibliotecas -------------------------
+*.o
+*.a
+*.so
+*.dll
+
+# ----- Arquivos de debug / mapas ----------------------------
+*.map
+*.dSYM/
+*.su
+
+# ----- Saída do AddressSanitizer / Valgrind -----------------
+vgcore.*
+core
+
+# ----- Arquivos temporários de relatório (se for implementado)
+*.csv
+*.txt
+!README.md
+
+# ----- IDEs --------------------------------------------------
+# VS Code
+.vscode/
+*.code-workspace
+
+# CLion / JetBrains
+.idea/
+cmake-build-*/
+*.iml
+
+# Code::Blocks
+*.cbp
+*.layout
+*.depend
+
+# Dev-C++ / Bloodshed
+*.dev
+
+# ----- Sistema operacional -----------------------------------
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Linux
+*~
+.nfs*
+
+Claude.md
