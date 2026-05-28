@@ -9,103 +9,109 @@ Sistema de monitoramento de telemetria para uma missão espacial experimental, d
 
 ## Visão geral
 
-O **Mission Control AI** simula o monitoramento de uma sonda/estação espacial ao longo de vários *ciclos* de leitura de telemetria. A cada ciclo, o sistema recebe dados (gerados automaticamente ou inseridos manualmente) de três subsistemas críticos:
-
-- **Energia** — nível de bateria, geração solar e consumo
-- **Comunicação** — força do sinal, latência e estado do enlace (link)
-- **Operacional** — temperatura interna e modo da missão
-
-A partir desses dados, o sistema **classifica** o estado de cada subsistema, **dispara alertas automáticos** e **reage a situações críticas** alterando o comportamento da missão (ex.: ativar modo de economia de energia). Ao final, gera um **relatório consolidado** da missão.
+O **Mission Control AI** simula o monitoramento de uma sonda/estação espacial ao longo de vários *ciclos* de leitura de telemetria. A cada ciclo, o sistema recebe dados de três subsistemas críticos, classifica cada um, dispara alertas automáticos e reage a situações críticas.
 
 ---
 
-## Objetivos
-
-O projeto aplica, de forma prática, os conceitos fundamentais de C:
+## Conceitos de C aplicados
 
 | Conceito | Onde aparece |
-|---|---|
+| --- | --- |
 | **Estruturas condicionais** | Classificação de status (`if`/`else`, `switch`) |
-| **Estruturas de repetição** | Laço de ciclos e menu (`for`, `while`, `do-while`) |
-| **Vetores** | Histórico de telemetria de toda a missão |
-| **Funções** | Geração, análise, alertas, relatório (responsabilidades separadas) |
-| **Structs e enums** | Modelagem dos dados de telemetria |
+| **Estruturas de repetição** | Menu (`do-while`), ciclos de simulação e relatório (`for`) |
+| **Vetores** | Histórico completo da missão (`historico[MAX_CICLOS]`) |
+| **Funções** | ~15 funções com responsabilidade única |
+| **Structs e enums** | Modelagem dos dados de telemetria (`Telemetria`, `NivelStatus`, etc.) |
 
 ---
 
 ## Funcionalidades
 
-1. **Monitoramento automático** — simula uma sequência de ciclos com dados gerados aleatoriamente dentro de faixas realistas de sensores.
-2. **Inserção manual** — permite ao operador inserir uma leitura à mão para testar cenários específicos.
-3. **Motor de análise** — classifica cada grandeza em três níveis: `NOMINAL`, `ATENÇÃO` ou `CRÍTICO`.
-4. **Alertas automáticos** — exibe avisos quando um subsistema sai do estado nominal.
-5. **Resposta a situações críticas** — lógica reativa que altera o estado da missão:
-   - Bateria crítica → ativa **modo economia** (reduz consumo nos próximos ciclos)
-   - Temperatura crítica → ativa **modo seguro**
-   - Sinal perdido por vários ciclos seguidos → **alerta de emergência** escalonado
-6. **Relatório final** — estatísticas da missão: médias, mínimos/máximos e total de alertas por tipo.
+1. **Inserir dados** — o usuário fornece temperatura, energia (%) e status de comunicação (0/1/2).
+2. **Verificação automática** — o sistema analisa cada leitura e emite alertas:
+
+| Condição | Alerta emitido |
+| --- | --- |
+| Temperatura > 80 °C | `[CRITICO] SUPERAQUECIMENTO` |
+| Energia < 20 % | `[CRITICO] ECONOMIA DE ENERGIA` |
+| Comunicação = 0 (link perdido) | `[CRITICO] FALHA DE COMUNICACAO` |
+
+1. **Menu interativo com `switch()`** — quatro opções principais + extras.
+
+### Bônus implementados
+
+- **Histórico das leituras** — vetor de até 100 ciclos (`historico[MAX_CICLOS]`).
+- **Simulação contínua dos sensores** — opção 4 do menu, gera N ciclos automaticamente.
+- **Relatório estatístico** — médias, mínimos/máximos, % de ciclos críticos, distribuição de modos.
+
+---
+
+## Menu principal
+
+```text
+==============================
+     MISSION CONTROL AI
+==============================
+1. Inserir dados
+2. Visualizar status atual
+3. Executar analise completa
+4. Simulacao automatica
+5. Configurar simulacao (N ciclos)
+0. Encerrar sistema
+```
 
 ---
 
 ## Limiares de classificação
 
-Os limites usados pelo motor de análise (centralizados como `#define` no código):
+Todos os limites estão centralizados como `#define` no topo do código:
 
 | Grandeza | NOMINAL | ATENÇÃO | CRÍTICO |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | Bateria (%) | > 50 | 20 a 50 | < 20 |
-| Temperatura (°C) | -20 a 50 | 50 a 60 / -40 a -20 | > 60 ou < -40 |
-| Força do sinal (dB) | > -70 | -85 a -70 | < -85 |
+| Temperatura (°C) | -20 a 50 | 50 a 80 / -40 a -20 | **> 80** ou < -40 |
+| Status comunicação | OK | INSTÁVEL | **PERDIDO (= 0)** |
 | Saldo de energia (W) | ≥ 0 | -50 a 0 | < -50 |
 
 ---
 
 ## Como compilar e executar
 
-Requer um compilador C (GCC recomendado).
+Requer GCC (Linux/Mac) ou MinGW (Windows).
 
 ```bash
 # Compilar
-gcc -o mission_control main.c -Wall
+gcc -o mission_control mission_control.c -Wall
 
-# Executar
+# Executar — Linux/Mac
 ./mission_control
-```
 
-No Windows (com GCC/MinGW):
-
-```bash
-gcc -o mission_control.exe main.c -Wall
-mission_control.exe
-```
-
----
-
-## Menu principal
-
-```
-=== MISSION CONTROL AI ===
-1. Iniciar monitoramento (simulação automática)
-2. Inserir leitura manual
-3. Ver relatório da missão
-4. Configurar simulação
-0. Encerrar
+# Executar — Windows
+./mission_control.exe
 ```
 
 ---
 
 ## Estrutura do código
 
-O projeto é contido em um único arquivo `main.c`, organizado em seções:
+Arquivo único `mission_control.c`, organizado em seções:
 
-1. Includes e definições de limiares (`#define`)
-2. Enums e a `struct Telemetria`
-3. Protótipos das funções
-4. `main()` — menu e laço principal
-5. Implementação das funções, agrupadas por responsabilidade (geração, análise, alertas, relatório, utilitários)
+1. `#include` e `#define` — limiares centralizados
+2. Enums e `struct Telemetria` — tipos de dados
+3. Protótipos — todas as funções declaradas antes de `main`
+4. `main()` — menu `do-while` + `switch`
+5. Implementações agrupadas por responsabilidade:
+   - Utilitários (`limparBuffer`, `aleatorioEmFaixa`)
+   - Geração/entrada (`gerarLeitura`, `lerLeituraManual`)
+   - Análise (`avaliarBateria`, `avaliarTemperatura`, `avaliarSinal`, `avaliarEnergia`)
+   - Alertas e resposta (`emitirAlertas`, `responderCritico`)
+   - Exibição (`exibirPainel`, `exibirUltimaLeitura`, `gerarRelatorio`)
+   - Fluxos de menu (`iniciarMonitoramento`, `inserirLeituraManual`)
 
 ---
 
-## Autor
+## Grupo
 
-Thiago Renatino — FIAP, Global Solution 2026.
+Thiago Renatino — RM569073
+Glauco Kelly — RM572840
+Gabriel Fagundes — RM569074
