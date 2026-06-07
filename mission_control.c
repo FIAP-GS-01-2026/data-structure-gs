@@ -18,11 +18,20 @@
 #include <stdlib.h>
 #include <time.h>
 
-// Delay em milissegundos 
+// Delay em milissegundos
 #include <windows.h>
 #define DORMIR_MS(ms) Sleep(ms)
 
 #define MAX_LEITURAS 100
+
+// ---------- Cores ANSI  ----------
+#define C_RESET   "\x1b[0m"
+#define C_VERMELHO "\x1b[31m"
+#define C_VERDE   "\x1b[32m"
+#define C_AMARELO "\x1b[33m"
+#define C_AZUL    "\x1b[34m"
+#define C_CIANO   "\x1b[36m"
+#define C_NEGRITO "\x1b[1m"
 
 // Estrutura para leitura de telemetria
 typedef struct
@@ -33,6 +42,7 @@ typedef struct
 } Leitura;
 
 // ---------- Prototipos ----------
+void habilitarCores(void);
 void limparBuffer(void);
 Leitura lerDados(void);
 Leitura gerarLeituraAleatoria(void);
@@ -52,19 +62,20 @@ int main(void)
     int total = 0;
     int opcao;
 
+    habilitarCores();
     srand((unsigned int)time(NULL));
 
     do
     {
-        printf("\n==============================\n");
-        printf("     MISSION CONTROL AI\n");
-        printf("==============================\n");
+        printf("\n" C_CIANO "==============================" C_RESET "\n");
+        printf(C_NEGRITO C_CIANO "     MISSION CONTROL AI" C_RESET "\n");
+        printf(C_CIANO "==============================" C_RESET "\n");
         printf("1 - Inserir dados\n");
         printf("2 - Visualizar status\n");
         printf("3 - Executar analise\n");
         printf("4 - Simulacao continua dos sensores\n");
         printf("5 - Encerrar sistema\n");
-        printf("------------------------------\n");
+        printf(C_CIANO "------------------------------" C_RESET "\n");
         printf("Opcao: ");
 
         if (scanf("%d", &opcao) != 1)
@@ -78,20 +89,20 @@ int main(void)
         case 1:
             if (total >= MAX_LEITURAS)
             {
-                printf("\n>> Historico cheio (%d leituras).\n", MAX_LEITURAS);
+                printf("\n" C_AMARELO ">> Historico cheio (%d leituras)." C_RESET "\n", MAX_LEITURAS);
             }
             else
             {
                 historico[total] = lerDados();
                 total++;
-                printf("\n>> Leitura %d registrada.\n", total);
+                printf("\n" C_VERDE ">> Leitura %d registrada." C_RESET "\n", total);
             }
             break;
 
         case 2:
             if (total == 0)
             {
-                printf("\n>> Nenhuma leitura registrada. Use a opcao 1.\n");
+                printf("\n" C_AMARELO ">> Nenhuma leitura registrada. Use a opcao 1." C_RESET "\n");
             }
             else
             {
@@ -102,7 +113,7 @@ int main(void)
         case 3:
             if (total == 0)
             {
-                printf("\n>> Nenhuma leitura para analisar.\n");
+                printf("\n" C_AMARELO ">> Nenhuma leitura para analisar." C_RESET "\n");
             }
             else
             {
@@ -118,11 +129,11 @@ int main(void)
             break;
 
         case 5:
-            printf("\nEncerrando Mission Control AI. Boa missao!\n");
+            printf("\n" C_VERDE "Encerrando Mission Control AI. Boa missao!" C_RESET "\n");
             break;
 
         default:
-            printf("\n>> Opcao invalida. Escolha entre 1 e 5.\n");
+            printf("\n" C_VERMELHO ">> Opcao invalida. Escolha entre 1 e 5." C_RESET "\n");
         }
     } while (opcao != 5);
 
@@ -132,6 +143,18 @@ int main(void)
 /* =============================================================
  *  FUNCOES
  * ============================================================= */
+
+// Habilita o processamento de cores ANSI no console do Windows 10+.
+void habilitarCores(void)
+{
+    HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+    DWORD modo = 0;
+    if (hOut == INVALID_HANDLE_VALUE || !GetConsoleMode(hOut, &modo))
+    {
+        return;
+    }
+    SetConsoleMode(hOut, modo | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+}
 
 // Descarta caracteres ate o fim da linha para evitar travar o menu.
 void limparBuffer(void)
@@ -147,26 +170,26 @@ Leitura lerDados(void)
 {
     Leitura l;
 
-    printf("\n-- Inserir dados --\n");
+    printf("\n" C_NEGRITO "-- Inserir dados --" C_RESET "\n");
 
     printf("Temperatura (C): ");
     while (scanf("%f", &l.temperatura) != 1)
     {
-        printf(">> Valor invalido. Digite um numero: ");
+        printf(C_VERMELHO ">> Valor invalido. Digite um numero: " C_RESET);
         limparBuffer();
     }
 
     printf("Energia (%% de 0 a 100): ");
     while (scanf("%f", &l.energia) != 1 || l.energia < 0.0f || l.energia > 100.0f)
     {
-        printf(">> Valor invalido. Digite entre 0 e 100: ");
+        printf(C_VERMELHO ">> Valor invalido. Digite entre 0 e 100: " C_RESET);
         limparBuffer();
     }
 
     printf("Comunicacao (0 = falha, 1 = ok): ");
     while (scanf("%d", &l.comunicacao) != 1 || (l.comunicacao != 0 && l.comunicacao != 1))
     {
-        printf(">> Valor invalido. Digite 0 ou 1: ");
+        printf(C_VERMELHO ">> Valor invalido. Digite 0 ou 1: " C_RESET);
         limparBuffer();
     }
 
@@ -186,11 +209,14 @@ Leitura gerarLeituraAleatoria(void)
 // Mostra os valores atuais da leitura.
 void exibirStatus(Leitura l)
 {
-    printf("\n======== STATUS ATUAL ========\n");
-    printf("Temperatura..: %.1f C\n", l.temperatura);
-    printf("Energia......: %.1f %%\n", l.energia);
-    printf("Comunicacao..: %s\n", l.comunicacao == 0 ? "FALHA" : "OK");
-    printf("==============================\n");
+    printf("\n" C_CIANO "======== STATUS ATUAL ========" C_RESET "\n");
+    printf("Temperatura..: %s%.1f C" C_RESET "\n",
+           l.temperatura > 80.0f ? C_VERMELHO : C_VERDE, l.temperatura);
+    printf("Energia......: %s%.1f %%" C_RESET "\n",
+           l.energia < 20.0f ? C_VERMELHO : C_VERDE, l.energia);
+    printf("Comunicacao..: %s\n",
+           l.comunicacao == 0 ? C_VERMELHO "FALHA" C_RESET : C_VERDE "OK" C_RESET);
+    printf(C_CIANO "==============================" C_RESET "\n");
 }
 
 // Aplica as 3 regras do enunciado e imprime os alertas.
@@ -200,23 +226,23 @@ void analisarAlertas(Leitura l)
 
     if (l.temperatura > 80.0f)
     {
-        printf("[ALERTA] Superaquecimento (%.1f C > 80)\n", l.temperatura);
+        printf(C_VERMELHO "[ALERTA] Superaquecimento (%.1f C > 80)" C_RESET "\n", l.temperatura);
         algumAlerta = 1;
     }
     if (l.energia < 20.0f)
     {
-        printf("[ALERTA] Economia de energia (%.1f%% < 20%%)\n", l.energia);
+        printf(C_VERMELHO "[ALERTA] Economia de energia (%.1f%% < 20%%)" C_RESET "\n", l.energia);
         algumAlerta = 1;
     }
     if (l.comunicacao == 0)
     {
-        printf("[ALERTA] Falha de comunicacao\n");
+        printf(C_VERMELHO "[ALERTA] Falha de comunicacao" C_RESET "\n");
         algumAlerta = 1;
     }
 
     if (!algumAlerta)
     {
-        printf("Todos os sistemas nominais.\n");
+        printf(C_VERDE "Todos os sistemas nominais." C_RESET "\n");
     }
 }
 
@@ -224,17 +250,17 @@ void analisarAlertas(Leitura l)
 void exibirHistorico(Leitura historico[], int total)
 {
     int i;
-    printf("\n======== HISTORICO (%d leitura(s)) ========\n", total);
-    printf("  #   Temp(C)   Energia(%%)   Comunicacao\n");
+    printf("\n" C_CIANO "======== HISTORICO (%d leitura(s)) ========" C_RESET "\n", total);
+    printf(C_NEGRITO "  #   Temp(C)   Energia(%%)   Comunicacao" C_RESET "\n");
     for (i = 0; i < total; i++)
     {
         printf("  %-3d %7.1f  %10.1f      %s\n",
                i + 1,
                historico[i].temperatura,
                historico[i].energia,
-               historico[i].comunicacao == 0 ? "FALHA" : "OK");
+               historico[i].comunicacao == 0 ? C_VERMELHO "FALHA" C_RESET : C_VERDE "OK" C_RESET);
     }
-    printf("===========================================\n");
+    printf(C_CIANO "===========================================" C_RESET "\n");
 }
 
 /* Simulacao continua: pede quantos ciclos rodar, gera leituras aleatorias,
@@ -246,14 +272,14 @@ void simularSensores(Leitura historico[], int *total)
 
     if (espacoLivre <= 0)
     {
-        printf("\n>> Historico cheio (%d leituras).\n", MAX_LEITURAS);
+        printf("\n" C_AMARELO ">> Historico cheio (%d leituras)." C_RESET "\n", MAX_LEITURAS);
         return;
     }
 
     printf("\nQuantos ciclos simular (1 a %d)? ", espacoLivre);
     if (scanf("%d", &n) != 1 || n < 1 || n > espacoLivre)
     {
-        printf(">> Valor invalido.\n");
+        printf(C_VERMELHO ">> Valor invalido." C_RESET "\n");
         limparBuffer();
         return;
     }
@@ -266,16 +292,16 @@ void simularSensores(Leitura historico[], int *total)
         historico[*total] = l;
         (*total)++;
 
-        printf("\n>>> Ciclo %d/%d <<<\n", i + 1, n);
+        printf("\n" C_NEGRITO C_AZUL ">>> Ciclo %d/%d <<<" C_RESET "\n", i + 1, n);
         printf("Temp: %.1f C | Energia: %.1f%% | Com: %s\n",
                l.temperatura, l.energia,
-               l.comunicacao == 0 ? "FALHA" : "OK");
+               l.comunicacao == 0 ? C_VERMELHO "FALHA" C_RESET : C_VERDE "OK" C_RESET);
         analisarAlertas(l);
 
         DORMIR_MS(500);
     }
 
-    printf("\n>> Simulacao concluida. Total no historico: %d leitura(s).\n", *total);
+    printf("\n" C_VERDE ">> Simulacao concluida. Total no historico: %d leitura(s)." C_RESET "\n", *total);
 }
 
 // Animacao de spinner girando enquanto "processa".
