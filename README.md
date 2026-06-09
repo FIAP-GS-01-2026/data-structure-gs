@@ -1,15 +1,10 @@
 # Mission Control AI
 
-Sistema de monitoramento de telemetria para uma missão espacial experimental, desenvolvido em linguagem C.
+Sistema em C de arquivo único para monitoramento de uma missão espacial experimental.
+O operador insere temperatura, energia e status de comunicação; o programa aplica regras
+de verificação automática, exibe alertas e mantém um histórico das leituras.
 
-> **Global Solution 2026 — FIAP**
-> Disciplina: Data Structures And Algorithms
-
----
-
-## Visão geral
-
-O **Mission Control AI** simula o monitoramento de uma sonda/estação espacial ao longo de vários *ciclos* de leitura de telemetria. A cada ciclo, o sistema recebe dados de três subsistemas críticos, classifica cada um, dispara alertas automáticos e reage a situações críticas.
+> **Global Solution 2026.1 — FIAP** · Disciplina: Data Structures and Algorithms · Arquivo principal: `mission_control.c`
 
 ---
 
@@ -17,101 +12,81 @@ O **Mission Control AI** simula o monitoramento de uma sonda/estação espacial 
 
 | Conceito | Onde aparece |
 | --- | --- |
-| **Estruturas condicionais** | Classificação de status (`if`/`else`, `switch`) |
-| **Estruturas de repetição** | Menu (`do-while`), ciclos de simulação e relatório (`for`) |
-| **Vetores** | Histórico completo da missão (`historico[MAX_CICLOS]`) |
-| **Funções** | ~15 funções com responsabilidade única |
-| **Structs e enums** | Modelagem dos dados de telemetria (`Telemetria`, `NivelStatus`, etc.) |
+| Estruturas condicionais (`if`) | As 3 regras de alerta em `analisarAlertas()` |
+| `switch` | Despacho do menu no `main()` |
+| Laço `do-while` | Loop principal do menu |
+| Laço `while` | Validação de entrada em `lerDados()` |
+| Laço `for` | Varredura do histórico e ciclos da simulação |
+| Vetores | `Leitura historico[MAX_LEITURAS]` (estático, tamanho fixo) |
+| Structs e `typedef` | Tipo `Leitura` |
+| Funções e passagem por referência | `simularSensores(historico, &total)` |
+| Macros (`#define`) | `MAX_LEITURAS`, `DORMIR_MS`, cores ANSI |
 
 ---
 
-## Funcionalidades
+## Estrutura de dados
 
-1. **Inserir dados** — o usuário fornece temperatura, energia (%) e status de comunicação (0/1/2).
-2. **Verificação automática** — o sistema analisa cada leitura e emite alertas:
+```c
+typedef struct {
+    float temperatura;  // C
+    float energia;      // % de 0 a 100
+    int   comunicacao;  // 0 = falha, 1 = ok
+} Leitura;
+```
+
+As leituras são guardadas em um vetor estático `historico[MAX_LEITURAS]` (100), com um
+contador `int total` indicando quantas posições já foram preenchidas.
+
+---
+
+## Regras de alerta
 
 | Condição | Alerta emitido |
 | --- | --- |
-| Temperatura > 80 °C | `[CRITICO] SUPERAQUECIMENTO` |
-| Energia < 20 % | `[CRITICO] ECONOMIA DE ENERGIA` |
-| Comunicação = 0 (link perdido) | `[CRITICO] FALHA DE COMUNICACAO` |
+| `temperatura > 80` | Superaquecimento |
+| `energia < 20` | Economia de energia |
+| `comunicacao == 0` | Falha de comunicação |
 
-1. **Menu interativo com `switch()`** — quatro opções principais + extras.
-
-### Bônus implementados
-
-- **Histórico das leituras** — vetor de até 100 ciclos (`historico[MAX_CICLOS]`).
-- **Simulação contínua dos sensores** — opção 4 do menu, gera N ciclos automaticamente.
-- **Relatório estatístico** — médias, mínimos/máximos, % de ciclos críticos, distribuição de modos.
+As três condições são `if` independentes — mais de um alerta pode disparar para a mesma
+leitura. Valores no limite (80, 20, 1) não disparam. Quando nenhuma é verdadeira, exibe
+"Todos os sistemas nominais.".
 
 ---
 
-## Menu principal
+## Menu
 
-```text
-==============================
-     MISSION CONTROL AI
-==============================
-1. Inserir dados
-2. Visualizar status atual
-3. Executar analise completa
-4. Simulacao automatica
-5. Configurar simulacao (N ciclos)
-0. Encerrar sistema
+```
+1 - Inserir dados
+2 - Visualizar status
+3 - Executar analise
+4 - Simulacao continua dos sensores
+5 - Encerrar sistema
 ```
 
----
+Entrada não numérica é tratada (opção inválida cai no `default` sem travar).
 
-## Limiares de classificação
+## Funcionalidades opcionais implementadas
 
-Todos os limites estão centralizados como `#define` no topo do código:
-
-| Grandeza | NOMINAL | ATENÇÃO | CRÍTICO |
-| --- | --- | --- | --- |
-| Bateria (%) | > 50 | 20 a 50 | < 20 |
-| Temperatura (°C) | -20 a 50 | 50 a 80 / -40 a -20 | **> 80** ou < -40 |
-| Status comunicação | OK | INSTÁVEL | **PERDIDO (= 0)** |
-| Saldo de energia (W) | ≥ 0 | -50 a 0 | < -50 |
+- **Histórico** — todas as leituras (manuais e simuladas) são gravadas no vetor e listadas na análise (opção 3).
+- **Simulação contínua** — opção 4 gera N ciclos com leituras aleatórias (casos nominais e críticos).
+- **Animações** — spinner e barra de progresso no terminal (cores ANSI).
 
 ---
 
-## Como compilar e executar
+## Compilação e execução
 
-Requer GCC (Linux/Mac) ou MinGW (Windows).
+> ⚠️ **Windows apenas.** O código usa `windows.h` (`Sleep`, cores ANSI via console do Windows),
+> portanto **não compila em Linux/Mac** sem adaptação. Requer MinGW/GCC no Windows.
 
 ```bash
-# Compilar
-gcc -o mission_control mission_control.c -Wall
-
-# Executar — Linux/Mac
-./mission_control
-
-# Executar — Windows
-./mission_control.exe
+gcc -Wall -Wextra -o mission_control.exe mission_control.c
+mission_control.exe
 ```
-
----
-
-## Estrutura do código
-
-Arquivo único `mission_control.c`, organizado em seções:
-
-1. `#include` e `#define` — limiares centralizados
-2. Enums e `struct Telemetria` — tipos de dados
-3. Protótipos — todas as funções declaradas antes de `main`
-4. `main()` — menu `do-while` + `switch`
-5. Implementações agrupadas por responsabilidade:
-   - Utilitários (`limparBuffer`, `aleatorioEmFaixa`)
-   - Geração/entrada (`gerarLeitura`, `lerLeituraManual`)
-   - Análise (`avaliarBateria`, `avaliarTemperatura`, `avaliarSinal`, `avaliarEnergia`)
-   - Alertas e resposta (`emitirAlertas`, `responderCritico`)
-   - Exibição (`exibirPainel`, `exibirUltimaLeitura`, `gerarRelatorio`)
-   - Fluxos de menu (`iniciarMonitoramento`, `inserirLeituraManual`)
 
 ---
 
 ## Grupo
 
-Thiago Renatino — RM569073
-Glauco Kelly — RM572840
-Gabriel Fagundes — RM569074
+- Thiago Renatino — RM569073
+- Glauco Kelly — RM572840
+- Gabriel Fagundes — RM569074
